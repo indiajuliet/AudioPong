@@ -38,23 +38,56 @@
             android:orientation="vertical"
             android:paddingTop="10dp" >
 
+            <TextView
+                android:id="@+id/textView4"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Medium Text"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
+
+            <TextView
+                android:id="@+id/textView5"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Medium Text"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
+
+            <TextView
+                android:id="@+id/textView6"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Medium Text"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
+            
+            <TextView
+                android:id="@+id/textView7"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Medium Text"
+                android:textAppearance="?android:attr/textAppearanceMedium" />   
+            <TextView
+                android:id="@+id/textView8"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Medium Text"
+                android:textAppearance="?android:attr/textAppearanceMedium" />   
+            <TextView
+                android:id="@+id/textView9"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Medium Text"
+                android:textAppearance="?android:attr/textAppearanceMedium" />   
+
             <SeekBar
                 android:id="@+id/fSlider"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:paddingTop="10dp" />
-
             <SeekBar
                 android:id="@+id/fSlider2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingTop="100dp" />
-
-            <SeekBar
-                android:id="@+id/fSlider3"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:paddingTop="100dp" />
+                android:paddingTop="10dp" />
 
             <TextView
                 android:id="@+id/textView1"
@@ -76,7 +109,6 @@
                 android:layout_height="wrap_content"
                 android:text="Medium Text"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
-
         </LinearLayout>
 
         <LinearLayout
@@ -94,9 +126,18 @@
                 style="?buttonBarButtonStyle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="switch input"
-                android:onClick="switchInput" />
+                android:layout_weight="0.50"
+                android:onClick="switchInput"
+                android:text="switch input" />
+            <Button
+                android:id="@+id/giveUp"
+                style="?buttonBarButtonStyle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.50"
+                android:onClick="give up!"
+                android:text="give up" />
+
         </LinearLayout>
 
     </FrameLayout>

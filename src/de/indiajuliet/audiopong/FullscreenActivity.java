@@ -1,15 +1,14 @@
 package de.indiajuliet.audiopong;
 
 import de.indiajuliet.audiopong.util.SystemUiHider;
-
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-
 import android.media.*;
 import android.widget.*;
 import android.widget.SeekBar.OnSeekBarChangeListener;
@@ -25,24 +24,31 @@ public class FullscreenActivity extends Activity implements SensorEventListener{
 	
     Thread t;
     int sr = 11025;
+    int amplitudeAlert = 0;
+   
+    int scorePlayer=0, scoreComputer=0;
+    
+    
     boolean isRunning = true;
     boolean useSlider = false;
     SeekBar fSlider;
     SeekBar fSlider2;
-    SeekBar fSlider3;
+//    SeekBar fSlider3;
+    
+    final double twopi = 8.*Math.atan(1.);
+    
     
     double sliderval;
     double sliderval2;
     double sliderval3;
-    double ballX = 0.0;
-    double ballY = 0.0;
+    double ballX = 0.75;
+    double ballY = 0.5;
+    double opponentY = 0.5;
+    
+   
     
     
-    
-    
-    TextView textBar1;
-    TextView textBar2;
-    TextView textBar3;
+    TextView textBar1, textBar2, textBar3, textBar4, textBar5, textBar6, textBar7, textBar8, textBar9;
     
 	
     private SensorManager sensorManager;
@@ -79,10 +85,17 @@ public class FullscreenActivity extends Activity implements SensorEventListener{
     	useSlider=!useSlider;
     }
     
+    public void giveUp (View view) {
+    	finish();
+    }
+    
     
     private Handler handler = new Handler();
+    private Handler handlerAlert = new Handler();
+    private Handler handlerCapture = new Handler();
     
-    private boolean upX, upY;
+    private boolean upX=false, upY;
+    private double angle = Math.random()/100;
     
     private Runnable runnable = new Runnable() {
     	   @Override
@@ -99,19 +112,62 @@ public class FullscreenActivity extends Activity implements SensorEventListener{
     			   upX = false; 		   
     		   
     		   if (upY) 
-    			   ballY+=0.01;
+    			   ballY+=Math.abs(angle);
     		   else 
-    			   ballY-=0.01;
+    			   ballY-=Math.abs(angle);
     		   
     		   if (upX) 
     			   ballX+=0.013;
     		   else 
-    			   ballX-=0.01;    		   
+    			   ballX-=0.013;   
+    		   
+    		   if (opponentY<ballY)
+    			   opponentY+=0.0051;
+    		   else
+    			   opponentY-=0.0051;
+    		   
+     	      
+
+    		   if (ballX>=1){
+    			   checkHit();    		   
+    		   }
+    		   if (ballX<=0)
+    			   checkOpponentHit();
+    		   
+    		   
     	      /* and here comes the "trick" */
     	      handler.postDelayed(this, 100);
+    	     // textBar4.setText("paddle_y="+String.valueOf((int)(sliderval*100)));
+    	      //textBar4.setText("angle="+String.valueOf((angle)));
+    	      textBar4.setText("delta_opponent="+String.valueOf((Math.abs(opponentY-ballY))));
+    	      textBar5.setText("ball_y="+String.valueOf((int)(ballY*100)));
+    	      textBar6.setText("ball_x="+String.valueOf((int)(ballX*100)));
+    	      textBar7.setText("delta_y_ball-paddle="+String.valueOf(ballY-sliderval));
+    	      textBar8.setText("Score Player="+String.valueOf(scorePlayer));
+    	      textBar9.setText("Score Computer="+String.valueOf(scoreComputer));
+    	      fSlider2.setProgress((int)(ballY*100));
     	   }
     	};
+    	
+    	
+    	private Runnable runnableAlert = new Runnable() {
+    		public void run() {
+    			if (amplitudeAlert==0 && ballX>.7 && upX)
+    				amplitudeAlert=4000;
+    			else
+    				amplitudeAlert=0;
+    			handlerAlert.postDelayed(this, (int)(400-ballX*ballX*350));
+    		}
+    	};
 
+    	private Runnable runnableCapture = new Runnable() {
+    		public void run () {
+    			Log.i("paddle_y=",String.valueOf(sliderval));
+    			Log.i("ball_x=",String.valueOf(ballX));
+    			Log.i("ball_y=",String.valueOf(ballY));
+    			//handlerCapture.postDelayed(this, 1000);
+    		}
+    	};
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -179,6 +235,7 @@ public class FullscreenActivity extends Activity implements SensorEventListener{
         // operations to prevent the jarring behavior of controls going away
         // while interacting with the UI.
         findViewById(R.id.switchInput).setOnTouchListener(mDelayHideTouchListener);
+        findViewById(R.id.giveUp).setOnTouchListener(mDelayHideTouchListener);
         
         
         
@@ -190,7 +247,12 @@ public class FullscreenActivity extends Activity implements SensorEventListener{
         textBar1 = (TextView) findViewById(R.id.textView1);
         textBar2 = (TextView) findViewById(R.id.textView2);
         textBar3 = (TextView) findViewById(R.id.textView3);
-        
+        textBar4 = (TextView) findViewById(R.id.textView4);
+        textBar5 = (TextView) findViewById(R.id.textView5);
+        textBar6 = (TextView) findViewById(R.id.textView6);
+        textBar7 = (TextView) findViewById(R.id.textView7);
+        textBar8 = (TextView) findViewById(R.id.textView8);
+        textBar9 = (TextView) findViewById(R.id.textView9);
         
         
         
@@ -214,6 +276,7 @@ public class FullscreenActivity extends Activity implements SensorEventListener{
         // set the listener on the slider
         fSlider.setOnSeekBarChangeListener(listener);
         
+
         // point the slider to thwe GUI widget
         fSlider2 = (SeekBar) findViewById(R.id.fSlider2);
 
@@ -227,30 +290,22 @@ public class FullscreenActivity extends Activity implements SensorEventListener{
               if(fromUser) sliderval2 = progress / (double)seekBar.getMax();
            }
         };
-        
-        
+
         // set the listener on the slider
         fSlider2.setOnSeekBarChangeListener(listener2);
+   
+
         
-        // point the slider to thwe GUI widget
-        fSlider3 = (SeekBar) findViewById(R.id.fSlider3);
-
-        // create a listener for the slider bar;
-        OnSeekBarChangeListener listener3 = new OnSeekBarChangeListener() {
-          public void onStopTrackingTouch(SeekBar seekBar) { }
-          public void onStartTrackingTouch(SeekBar seekBar) { }
-          public void onProgressChanged(SeekBar seekBar, 
-                                          int progress,
-                                           boolean fromUser) {
-              if(fromUser) sliderval3 = progress / (double)seekBar.getMax();
-           }
-        };
-
-        // set the listener on the slider
-        fSlider3.setOnSeekBarChangeListener(listener3);
+        
+        
+        
+        
+        
         
         
         handler.postDelayed(runnable, 100);
+        handler.postDelayed(runnableAlert, 1000);
+        handler.postDelayed(runnableCapture, 1000);
         
 
         // start a new thread to synthesise audio
@@ -261,9 +316,7 @@ public class FullscreenActivity extends Activity implements SensorEventListener{
          // set the buffer size
         int buffsize = AudioTrack.getMinBufferSize(sr,
                 AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
-        
-        textBar1.setText(String.valueOf(ballY));
-        
+ 
         
         // create an audiotrack object
         AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC,
@@ -272,26 +325,30 @@ public class FullscreenActivity extends Activity implements SensorEventListener{
                                   AudioTrack.MODE_STREAM);
 
         short samples[] = new short[buffsize];
-        int amplitude1 = 10000;
-        int amplitude2 = 10000;
-        double twopi = 8.*Math.atan(1.);
-        double frequency1 = 440.f;
-        double frequency2 = 440.f;
-        double phase1 = 0.0;
-        double phase2 = 0.0;
+        int amplitudePaddle = 10000;
+        int amplitudeBall = 0;
+       
+        double frequencyPaddle = 440.f;
+        double frequencyBall = 440.f;
+        double frequencyAlert = 220.f;
+        double phasePaddle = 0.0;
+        double phaseBall = 0.0;
+        double phaseAlert = 0.0;
+        
 
         // start audio
        audioTrack.play();
 
        // synthesis loop
        while(isRunning){
-        frequency1 =  440 + 440*sliderval;
-        frequency2 =  440 + 440*ballY;
+        frequencyPaddle =  440 + 440*sliderval;
+        frequencyBall =  440 + 440*ballY;
         for(int i=0; i < buffsize; i++){
-        	amplitude2=(int)(ballX*10000);
-        	samples[i] = (short) (amplitude1*Math.sin(phase1)+(amplitude2*Math.cos(phase2)));
-			phase1 += twopi*frequency1/sr;
-			phase2 += twopi*frequency2/sr;
+        	amplitudeBall=(int)(ballX*10000);
+        	samples[i] = (short) (amplitudePaddle*triangle(phasePaddle)+(amplitudeBall*Math.sin(phaseBall))+(amplitudeAlert*square(phaseAlert)));
+			phasePaddle += twopi*frequencyPaddle/sr;
+			phaseBall += twopi*frequencyBall/sr;
+			phaseAlert += twopi*frequencyAlert/sr;
         }
        audioTrack.write(samples, 0, buffsize);;
       }
@@ -304,8 +361,7 @@ public class FullscreenActivity extends Activity implements SensorEventListener{
    t.start(); 
    
    sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-   
-   
+     
         
     }
 
@@ -322,14 +378,16 @@ public class FullscreenActivity extends Activity implements SensorEventListener{
       float[] values = event.values;
       // Movement
       float x = values[0];
-      float y = values[1];
+      float y = (values[1]/SensorManager.GRAVITY_EARTH+1)/2;
       float z = values[2];
-      //textBar1.setText(String.valueOf(x));
-      //textBar2.setText(String.valueOf((y+SensorManager.GRAVITY_EARTH)/2));
-      //textBar3.setText(String.valueOf((z+SensorManager.GRAVITY_EARTH)/2));
+
+      
+      textBar1.setText("x="+String.valueOf(((int)(x*100))/100.0));
+      textBar2.setText("y="+String.valueOf(((int)(y*100))/100.0));
+      textBar3.setText("z="+String.valueOf(((int)(z*100))/100.0));
       if (useSlider){
-    	  fSlider.setProgress((int)((y+SensorManager.GRAVITY_EARTH)*5));
-    	  sliderval=(y+SensorManager.GRAVITY_EARTH)/20;
+    	  fSlider.setProgress((int)(y*100));
+    	  sliderval=y;
       }
     //  fSlider2.setProgress((int)((z+SensorManager.GRAVITY_EARTH)*5));
      // sliderval2=(z+SensorManager.GRAVITY_EARTH)/20;
@@ -403,7 +461,7 @@ public class FullscreenActivity extends Activity implements SensorEventListener{
       // accelerometer sensors
       sensorManager.registerListener(this,
           sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
-          SensorManager.SENSOR_DELAY_NORMAL);
+          SensorManager.SENSOR_DELAY_FASTEST);
     }
 
     @Override
@@ -413,6 +471,65 @@ public class FullscreenActivity extends Activity implements SensorEventListener{
       sensorManager.unregisterListener(this);
     }
     
+    public double triangle(double input) {
+    	double modInput = input % twopi;
+    	if (modInput <= Math.PI)
+    		return 2/Math.PI*modInput-1;
+    	else
+    		return -2/Math.PI*modInput+3;
+    		
+    }
+    
+    public double square(double input) {
+    	double modInput = input % twopi;
+    	if (modInput <= Math.PI)
+    		return 1;
+    	else
+    		return -1;
+    		
+    }
+    
+    public void checkHit() {
+    	double delta = sliderval-ballY;
+    	if (Math.abs(delta)>.05)
+    		scoreComputer++;
+    	else {
+    		angle=delta/4;
+    		if (delta<0)
+    			upY=true;
+    		else
+    			upY=false;
+    	}
+    }
+    
+    public void checkOpponentHit() {
+    	double delta = opponentY-ballY;
+    	if (Math.abs(delta)>.05)
+    		scorePlayer++;
+    	else {
+    		angle=delta/4;
+    		if (delta<0)
+    			upY=true;
+    		else
+    			upY=false;
+    	}
+    }
+    
+    
+    
+    public void checkHitSinglemode() {
+    	double delta = sliderval-ballY;
+    	if (Math.abs(delta)>.05)
+    		scoreComputer++;
+    	else {
+    		scorePlayer++;
+    		angle=delta/4;
+    		if (delta<0)
+    			upY=true;
+    		else
+    			upY=false;
+    	}
+    }
     
     
 }
