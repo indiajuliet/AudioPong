@@ -1,0 +1,171 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000"
+    tools:context=".GameActivity" >
+
+    <!--
+         The primary full-screen view. This can be replaced with whatever view
+         is needed to present your content, e.g. VideoView, SurfaceView,
+         TextureView, etc.
+    -->
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical" >
+
+        <TextView
+            android:id="@+id/fullscreen_content"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="top|center"
+            android:keepScreenOn="true"
+            android:text="SETTINGS"
+            android:textColor="#13d962"
+            android:textSize="25sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/textView1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="top|center"
+            android:text="input mode"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:textColor="#13d962" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical|center" >
+
+	        <RadioGroup
+	        	android:id="@+id/rbGroupInput"
+	        	android:layout_width="wrap_content"
+	        	android:layout_height="wrap_content" >
+		        <RadioButton
+		                android:id="@+id/rbIMmove"
+		                android:layout_width="wrap_content"
+		                android:layout_height="wrap_content"
+		                android:text="move" />
+		
+		            <RadioButton
+		                android:id="@+id/rbIMtouch"
+		                android:layout_width="wrap_content"
+		                android:layout_height="wrap_content"
+		                android:text="touch" />
+			</RadioGroup>
+        </LinearLayout>
+
+        
+        <TextView
+            android:id="@+id/textView2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="top|center"
+            android:text="match length"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:textColor="#13d962" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical|center" >
+
+            <RadioButton
+                android:id="@+id/rbML3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="3" />
+
+            <RadioButton
+                android:id="@+id/rbML6"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="6" />
+            
+            <RadioButton
+                android:id="@+id/rbML10"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="10" />
+            
+            <RadioButton
+                android:id="@+id/rbMLtrainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="trainer" />            
+        </LinearLayout>        
+        
+        <TextView
+            android:id="@+id/textView3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="top|center"
+            android:text="computer speed"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:textColor="#13d962" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical|center" >
+
+            <RadioButton
+                android:id="@+id/rbCSslow"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="slow" />
+
+            <RadioButton
+                android:id="@+id/rbCSmiddle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="middle" />
+            
+            <RadioButton
+                android:id="@+id/rbCSfast"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="fast" />
+                     
+        </LinearLayout>  
+    </LinearLayout>
+
+
+    <!--
+         This FrameLayout insets its children based on system windows using
+         android:fitsSystemWindows.
+    -->
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fitsSystemWindows="true" >
+
+        <LinearLayout
+            android:id="@+id/fullscreen_content_controls"
+            style="?buttonBarStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|center_horizontal"
+            android:background="@color/black_overlay"
+            android:orientation="horizontal"
+            tools:ignore="UselessParent" >
+            <Button
+                android:id="@+id/playGame"
+                style="?buttonBarButtonStyle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:onClick="playGame"
+                android:text="PLAY!" />
+
+        </LinearLayout>
+
+    </FrameLayout>
+
+</FrameLayout>

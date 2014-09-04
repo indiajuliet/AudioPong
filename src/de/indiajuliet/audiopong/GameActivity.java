@@ -3,6 +3,9 @@ package de.indiajuliet.audiopong;
 import de.indiajuliet.audiopong.util.SystemUiHider;
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -20,35 +23,32 @@ import android.hardware.*;
  *
  * @see SystemUiHider
  */
-public class FullscreenActivity extends Activity implements SensorEventListener{
+public class GameActivity extends Activity implements SensorEventListener{
 	
     Thread t;
-    int sr = 11025;
+    int sr = 44100;
     int amplitudeAlert = 0;
    
     int scorePlayer=0, scoreComputer=0;
     
     
     boolean isRunning = true;
-    boolean useSlider = false;
-    SeekBar fSlider;
-    SeekBar fSlider2;
-//    SeekBar fSlider3;
+    boolean useSlider ;
+    SeekBar paddleSlider, ballSlider, opponentPaddleSlider;
+
     
     final double twopi = 8.*Math.atan(1.);
     
     
-    double sliderval;
-    double sliderval2;
-    double sliderval3;
+    double playerY = 0.5;
     double ballX = 0.75;
     double ballY = 0.5;
     double opponentY = 0.5;
     
-   
+   int matchLength=6;
     
     
-    TextView textBar1, textBar2, textBar3, textBar4, textBar5, textBar6, textBar7, textBar8, textBar9;
+    TextView tbScorePlayer, tbScoreComputer;
     
 	
     private SensorManager sensorManager;
@@ -90,79 +90,77 @@ public class FullscreenActivity extends Activity implements SensorEventListener{
     }
     
     
-    private Handler handler = new Handler();
-    private Handler handlerAlert = new Handler();
+    private Handler gameHandler = new Handler();
+    private Handler alertHandler = new Handler();
     private Handler handlerCapture = new Handler();
     
     private boolean upX=false, upY;
     private double angle = Math.random()/100;
     
-    private Runnable runnable = new Runnable() {
+    private Runnable gameRunnable = new Runnable() {
     	   @Override
     	   public void run() {
-    	      /* do what you need to do */
+    	   // upper and lower borders
     		   if (ballY<=0)
     			   upY = true;
     		   if (ballY>=1)
     			   upY = false;
-    		   
-    		   if (ballX<=0)
+    		  
+    	   // left and right borders
+    		   if (ballX<=0){
     			   upX = true;
-    		   if (ballX>=1)
-    			   upX = false; 		   
+    			   checkOpponentHit();
+    		   }	   
+    		   if (ballX>=1){
+    			   upX = false;
+    			   checkPlayerHit();  
+    		   }
     		   
+    	   // Ball y-movement
     		   if (upY) 
     			   ballY+=Math.abs(angle);
     		   else 
     			   ballY-=Math.abs(angle);
     		   
+    	   // Ball x-movement
     		   if (upX) 
     			   ballX+=0.013;
     		   else 
     			   ballX-=0.013;   
-    		   
+    		
+    	   //  opponent paddle movement towards ball
     		   if (opponentY<ballY)
     			   opponentY+=0.0051;
     		   else
     			   opponentY-=0.0051;
-    		   
-     	      
+    	   
+    	   // rerun every 1/10 s  
+    		   if (isRunning)
+    			   gameHandler.postDelayed(this, 100);
 
-    		   if (ballX>=1){
-    			   checkHit();    		   
-    		   }
-    		   if (ballX<=0)
-    			   checkOpponentHit();
-    		   
-    		   
-    	      /* and here comes the "trick" */
-    	      handler.postDelayed(this, 100);
-    	     // textBar4.setText("paddle_y="+String.valueOf((int)(sliderval*100)));
-    	      //textBar4.setText("angle="+String.valueOf((angle)));
-    	      textBar4.setText("delta_opponent="+String.valueOf((Math.abs(opponentY-ballY))));
-    	      textBar5.setText("ball_y="+String.valueOf((int)(ballY*100)));
-    	      textBar6.setText("ball_x="+String.valueOf((int)(ballX*100)));
-    	      textBar7.setText("delta_y_ball-paddle="+String.valueOf(ballY-sliderval));
-    	      textBar8.setText("Score Player="+String.valueOf(scorePlayer));
-    	      textBar9.setText("Score Computer="+String.valueOf(scoreComputer));
-    	      fSlider2.setProgress((int)(ballY*100));
+    	   // update screen
+    	      tbScorePlayer.setText("PLAYER="+String.valueOf(scorePlayer));
+    	      tbScoreComputer.setText("COMPUTER="+String.valueOf(scoreComputer));
+    	      ballSlider.setProgress((int)(ballY*100));
+    	      opponentPaddleSlider.setProgress((int)(opponentY*100));
     	   }
     	};
     	
     	
-    	private Runnable runnableAlert = new Runnable() {
+    	private Runnable alertRunnable = new Runnable() {
     		public void run() {
     			if (amplitudeAlert==0 && ballX>.7 && upX)
     				amplitudeAlert=4000;
     			else
     				amplitudeAlert=0;
-    			handlerAlert.postDelayed(this, (int)(400-ballX*ballX*350));
+    			if (isRunning)
+    				alertHandler.postDelayed(this, (int)(400-ballX*ballX*350));
     		}
     	};
 
     	private Runnable runnableCapture = new Runnable() {
     		public void run () {
-    			Log.i("paddle_y=",String.valueOf(sliderval));
+    			Log.i("paddle_y=",String.valueOf(playerY));
     			Log.i("ball_x=",String.valueOf(ballX));
     			Log.i("ball_y=",String.valueOf(ballY));
     			//handlerCapture.postDelayed(this, 1000);
@@ -172,7 +170,7 @@ public class FullscreenActivity extends Activity implements SensorEventListener{
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.activity_fullscreen);
+        setContentView(R.layout.activity_game);
 
         final View controlsView = findViewById(R.id.fullscreen_content_controls);
         final View contentView = findViewById(R.id.fullscreen_content);
@@ -244,68 +242,48 @@ public class FullscreenActivity extends Activity implements SensorEventListener{
         
         
         
-        textBar1 = (TextView) findViewById(R.id.textView1);
-        textBar2 = (TextView) findViewById(R.id.textView2);
-        textBar3 = (TextView) findViewById(R.id.textView3);
-        textBar4 = (TextView) findViewById(R.id.textView4);
-        textBar5 = (TextView) findViewById(R.id.textView5);
-        textBar6 = (TextView) findViewById(R.id.textView6);
-        textBar7 = (TextView) findViewById(R.id.textView7);
-        textBar8 = (TextView) findViewById(R.id.textView8);
-        textBar9 = (TextView) findViewById(R.id.textView9);
+
+        tbScorePlayer = (TextView) findViewById(R.id.scorePlayer);
+        tbScoreComputer = (TextView) findViewById(R.id.scoreComputer);
+        paddleSlider = (SeekBar) findViewById(R.id.paddleSlider);
+        opponentPaddleSlider = (SeekBar) findViewById(R.id.opponentPaddleSlider);
         
         
+        SharedPreferences settings = getSharedPreferences(
+                "settings", Context.MODE_WORLD_WRITEABLE);
+        int inputMode = settings.getInt("input", R.id.rbIMmove);
+        switch (inputMode){
+        	case R.id.rbIMmove 	: 	useSlider=false;
+        							break;
+        	case R.id.rbIMtouch	:	useSlider=true;
+        							break;
+        }
         
-        
-        
-        
-        // point the slider to thwe GUI widget
-        fSlider = (SeekBar) findViewById(R.id.fSlider);
+
+
 
         // create a listener for the slider bar;
-        OnSeekBarChangeListener listener = new OnSeekBarChangeListener() {
+          OnSeekBarChangeListener listener = new OnSeekBarChangeListener() {
           public void onStopTrackingTouch(SeekBar seekBar) { }
           public void onStartTrackingTouch(SeekBar seekBar) { }
           public void onProgressChanged(SeekBar seekBar, 
                                           int progress,
                                            boolean fromUser) {
-              if(fromUser) sliderval = progress / (double)seekBar.getMax();
+              if(fromUser) playerY = progress / (double)seekBar.getMax();
            }
         };
 
         // set the listener on the slider
-        fSlider.setOnSeekBarChangeListener(listener);
+        paddleSlider.setOnSeekBarChangeListener(listener);
         
 
         // point the slider to thwe GUI widget
-        fSlider2 = (SeekBar) findViewById(R.id.fSlider2);
-
-        // create a listener for the slider bar;
-        OnSeekBarChangeListener listener2 = new OnSeekBarChangeListener() {
-          public void onStopTrackingTouch(SeekBar seekBar) { }
-          public void onStartTrackingTouch(SeekBar seekBar) { }
-          public void onProgressChanged(SeekBar seekBar, 
-                                          int progress,
-                                           boolean fromUser) {
-              if(fromUser) sliderval2 = progress / (double)seekBar.getMax();
-           }
-        };
-
-        // set the listener on the slider
-        fSlider2.setOnSeekBarChangeListener(listener2);
-   
+        ballSlider = (SeekBar) findViewById(R.id.ballSlider);
 
         
-        
-        
-        
-        
-        
-        
-        
-        handler.postDelayed(runnable, 100);
-        handler.postDelayed(runnableAlert, 1000);
-        handler.postDelayed(runnableCapture, 1000);
+        gameHandler.postDelayed(gameRunnable, 100);
+        gameHandler.postDelayed(alertRunnable, 1000);
+        //gameHandler.postDelayed(runnableCapture, 1000);
         
 
         // start a new thread to synthesise audio
@@ -316,7 +294,7 @@ public class FullscreenActivity extends Activity implements SensorEventListener{
          // set the buffer size
         int buffsize = AudioTrack.getMinBufferSize(sr,
                 AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
- 
+        Log.i("buffsize=",String.valueOf(buffsize));
         
         // create an audiotrack object
         AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC,
@@ -341,11 +319,11 @@ public class FullscreenActivity extends Activity implements SensorEventListener{
 
        // synthesis loop
        while(isRunning){
-        frequencyPaddle =  440 + 440*sliderval;
+        frequencyPaddle =  440 + 440*playerY;
         frequencyBall =  440 + 440*ballY;
+        amplitudeBall=(int)(ballX*10000);
         for(int i=0; i < buffsize; i++){
-        	amplitudeBall=(int)(ballX*10000);
-        	samples[i] = (short) (amplitudePaddle*triangle(phasePaddle)+(amplitudeBall*Math.sin(phaseBall))+(amplitudeAlert*square(phaseAlert)));
+        	samples[i] = (short) (amplitudePaddle*Math.sin(phasePaddle)+(amplitudeBall*triangle(phaseBall))+(amplitudeAlert/2*square(phaseAlert))+(amplitudeAlert*Math.random()));
 			phasePaddle += twopi*frequencyPaddle/sr;
 			phaseBall += twopi*frequencyBall/sr;
 			phaseAlert += twopi*frequencyAlert/sr;
@@ -369,7 +347,8 @@ public class FullscreenActivity extends Activity implements SensorEventListener{
     @Override
     public void onSensorChanged(SensorEvent event) {
       if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-        getAccelerometer(event);
+    	  if (!useSlider)
+    		  getAccelerometer(event);
       }
 
     }
@@ -380,15 +359,9 @@ public class FullscreenActivity extends Activity implements SensorEventListener{
       float x = values[0];
       float y = (values[1]/SensorManager.GRAVITY_EARTH+1)/2;
       float z = values[2];
+       paddleSlider.setProgress((int)(y*100));
+       playerY=y;
 
-      
-      textBar1.setText("x="+String.valueOf(((int)(x*100))/100.0));
-      textBar2.setText("y="+String.valueOf(((int)(y*100))/100.0));
-      textBar3.setText("z="+String.valueOf(((int)(z*100))/100.0));
-      if (useSlider){
-    	  fSlider.setProgress((int)(y*100));
-    	  sliderval=y;
-      }
     //  fSlider2.setProgress((int)((z+SensorManager.GRAVITY_EARTH)*5));
      // sliderval2=(z+SensorManager.GRAVITY_EARTH)/20;
       
@@ -453,6 +426,8 @@ public class FullscreenActivity extends Activity implements SensorEventListener{
            e.printStackTrace();
          }
          t = null;
+       //  gameHandler.removeCallbacks(gameRunnable);
+       //  alertHandler..removeCallbacks(alertRunnable);
    }
     @Override
     protected void onResume() {
@@ -489,10 +464,15 @@ public class FullscreenActivity extends Activity implements SensorEventListener{
     		
     }
     
-    public void checkHit() {
-    	double delta = sliderval-ballY;
-    	if (Math.abs(delta)>.05)
+    public void checkPlayerHit() {
+    	double delta = playerY-ballY;
+    	if (Math.abs(delta)>.05){
     		scoreComputer++;
+    		if (scoreComputer>=matchLength){
+    			goGameOver();
+    			finish();
+    		}
+    	}
     	else {
     		angle=delta/4;
     		if (delta<0)
@@ -504,8 +484,13 @@ public class FullscreenActivity extends Activity implements SensorEventListener{
     
     public void checkOpponentHit() {
     	double delta = opponentY-ballY;
-    	if (Math.abs(delta)>.05)
+    	if (Math.abs(delta)>.05){
     		scorePlayer++;
+			if (scorePlayer>=matchLength){
+				goGameOver();
+				finish();
+			}
+		}
     	else {
     		angle=delta/4;
     		if (delta<0)
@@ -518,7 +503,7 @@ public class FullscreenActivity extends Activity implements SensorEventListener{
     
     
     public void checkHitSinglemode() {
-    	double delta = sliderval-ballY;
+    	double delta = playerY-ballY;
     	if (Math.abs(delta)>.05)
     		scoreComputer++;
     	else {
@@ -529,6 +514,13 @@ public class FullscreenActivity extends Activity implements SensorEventListener{
     		else
     			upY=false;
     	}
+    }
+    
+    public void goGameOver() {
+    	Intent intent = new Intent(GameActivity.this,GameoverActivity.class);
+    	intent.putExtra("scorePlayer",scorePlayer);
+    	intent.putExtra("scoreComputer", scoreComputer);
+    	startActivity(intent);
     }
     
     
