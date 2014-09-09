@@ -53,6 +53,19 @@ public class WelcomeActivity extends Activity {
     private SystemUiHider mSystemUiHider;
     
 
+ // Button navigation - start GameActivity
+    public void playGame (View view) {
+    	Intent intent = new Intent(getApplicationContext(),GameActivity.class);
+    	startActivity(intent);
+    }
+    
+ // Button navigation - start SettingsActivity
+    public void goSettings (View view) {
+    	Intent intent = new Intent(getApplicationContext(),SettingsActivity.class);
+    	startActivity(intent);
+    }
+    
+    
    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -122,11 +135,6 @@ public class WelcomeActivity extends Activity {
         // while interacting with the UI.
         findViewById(R.id.playGame).setOnTouchListener(mDelayHideTouchListener);
         findViewById(R.id.settings).setOnTouchListener(mDelayHideTouchListener);
-
-        
-        
-
-        
     }
 
     
@@ -172,17 +180,4 @@ public class WelcomeActivity extends Activity {
         mHideHandler.removeCallbacks(mHideRunnable);
         mHideHandler.postDelayed(mHideRunnable, delayMillis);
     }
-    
- 
-    public void playGame (View view) {
-    	Intent intent = new Intent(getApplicationContext(),GameActivity.class);
-    	startActivity(intent);
-    }
-    
-    public void goSettings (View view) {
-    	Intent intent = new Intent(getApplicationContext(),SettingsActivity.class);
-    	startActivity(intent);
-    }
-    
-    
 }

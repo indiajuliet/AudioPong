@@ -27,12 +27,6 @@ import android.hardware.*;
  */
 public class SettingsActivity extends Activity {
 	
-    RadioGroup  rbGroupInput;
-
-
-    SharedPreferences.Editor editor;
-	  
-	
     /**
      * Whether or not the system UI should be auto-hidden after
      * {@link #AUTO_HIDE_DELAY_MILLIS} milliseconds.
@@ -60,6 +54,94 @@ public class SettingsActivity extends Activity {
      * The instance of the {@link SystemUiHider} for this activity.
      */
     private SystemUiHider mSystemUiHider;
+
+    // Radio Button Groups
+    RadioGroup  rbGroupInput;
+    RadioGroup  rbGroupMatchLength;
+    RadioGroup  rbGroupComputerSpeed;
+
+    // Editor for storing Preferences
+    SharedPreferences.Editor editor;
+    
+    
+    // Button navigation - start GameActivity
+    public void playGame (View view) {
+    	Intent intent = new Intent(getApplicationContext(),GameActivity.class);
+    	startActivity(intent);
+    }
+    
+    /**
+     * Set settings file and Radiobutton to im
+     * @param im
+     */
+    private void syncInputMode(int im){
+        switch (im){
+	        case R.id.rbIMmove:
+	        	rbGroupInput.check(R.id.rbIMmove);
+	            editor.putInt("input",R.id.rbIMmove);
+	            editor.apply();
+	            break;
+	        case R.id.rbIMtouch:
+	        	rbGroupInput.check(R.id.rbIMtouch);
+	        	editor.putInt("input",R.id.rbIMtouch);
+	        	editor.apply();
+	        	break;
+        }
+    }  
+    
+    /**
+     * Set settings file and Radiobutton to ml
+     * @param ml
+     */
+    private void syncMatchLength(int ml){
+        switch (ml){
+	        case R.id.rbML3:
+	        	rbGroupMatchLength.check(R.id.rbML3);
+	            editor.putInt("length",R.id.rbML3);
+	            editor.apply();
+	            break;
+	        case R.id.rbML6:
+	        	rbGroupMatchLength.check(R.id.rbML6);
+	        	editor.putInt("length",R.id.rbML6);
+	        	editor.apply();
+	        	break;
+	        case R.id.rbML10:
+	        	rbGroupMatchLength.check(R.id.rbML10);
+	        	editor.putInt("length",R.id.rbML10);
+	        	editor.apply();
+	        	break;	        	
+	        case R.id.rbMLtrainer:
+	        	rbGroupMatchLength.check(R.id.rbMLtrainer);
+	        	editor.putInt("length",R.id.rbMLtrainer);
+	        	editor.apply();
+	        	break;	        		        	
+        }
+    }  
+    
+    /**
+     * Set settings file and Radiobutton to cs
+     * @param cs
+     */
+    private void syncComputerSpeed(int cs){
+        switch (cs){
+	        case R.id.rbCSfast:
+	        	rbGroupComputerSpeed.check(R.id.rbCSfast);
+	            editor.putInt("speed",R.id.rbCSfast);
+	            editor.apply();
+	            break;
+	        case R.id.rbCSmiddle:
+	        	rbGroupComputerSpeed.check(R.id.rbCSmiddle);
+	        	editor.putInt("speed",R.id.rbCSmiddle);
+	        	editor.apply();
+	        	break;
+	        case R.id.rbCSslow:
+	        	rbGroupComputerSpeed.check(R.id.rbCSslow);
+	        	editor.putInt("speed",R.id.rbCSslow);
+	        	editor.apply();
+	        	break;	        	
+        }
+    }  
+    
     
 
    
@@ -131,32 +213,44 @@ public class SettingsActivity extends Activity {
         // while interacting with the UI.
         findViewById(R.id.playGame).setOnTouchListener(mDelayHideTouchListener);
 
-
+        // find Radio Button Groups by ID
         rbGroupInput = (RadioGroup) findViewById(R.id.rbGroupInput);
+        rbGroupMatchLength = (RadioGroup) findViewById(R.id.rbGroupMatchLength);
+        rbGroupComputerSpeed = (RadioGroup) findViewById(R.id.rbGroupComputerSpeed);
+        
+        // Set Listeners to react on inputs
         rbGroupInput.setOnCheckedChangeListener(new OnCheckedChangeListener(){
         	public void onCheckedChanged(RadioGroup group, int checkedId) {
         			syncInputMode(checkedId);
         			}
         	});
-       
-        
+        rbGroupMatchLength.setOnCheckedChangeListener(new OnCheckedChangeListener(){
+        	public void onCheckedChanged(RadioGroup group, int checkedId) {
+        			syncMatchLength(checkedId);
+        			}
+        	});       
+        rbGroupComputerSpeed.setOnCheckedChangeListener(new OnCheckedChangeListener(){
+        	public void onCheckedChanged(RadioGroup group, int checkedId) {
+        			syncComputerSpeed(checkedId);
+        			}
+        	});        
           
         
         
-       // SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-        SharedPreferences settings = getSharedPreferences(
-                "settings", Context.MODE_WORLD_WRITEABLE);
+       // open Shared preferences file (world writeable for debug)
+        SharedPreferences settings = getSharedPreferences("settings", Context.MODE_WORLD_WRITEABLE);
+        // Point editor to settings file
         editor = settings.edit();
         
+        // Read settings 
         int inputMode = settings.getInt("input", R.id.rbIMmove);
+        int matchLength = settings.getInt("length", R.id.rbML6);
+        int computerSpeed = settings.getInt("speed", R.id.rbCSmiddle);
+        //check radiobuttons according to settings
         syncInputMode(inputMode);
-        
-        editor.putInt("length", R.id.rbML6);
-        editor.putInt("speed", R.id.rbCSmiddle);
+        syncMatchLength(matchLength);
+        syncComputerSpeed(computerSpeed);
         editor.apply();
-       
-
-        
     }
 
     
@@ -202,26 +296,4 @@ public class SettingsActivity extends Activity {
         mHideHandler.removeCallbacks(mHideRunnable);
         mHideHandler.postDelayed(mHideRunnable, delayMillis);
     }
-    
- 
-    public void playGame (View view) {
-    	Intent intent = new Intent(getApplicationContext(),GameActivity.class);
-    	startActivity(intent);
-    }
-    
-    
-    private void syncInputMode(int inputMode){
-        switch (inputMode){
-	        case R.id.rbIMmove:
-	        	rbGroupInput.check(R.id.rbIMmove);
-	            editor.putInt("input",R.id.rbIMmove);
-	            editor.apply();
-	            break;
-	        case R.id.rbIMtouch:
-	        	rbGroupInput.check(R.id.rbIMtouch);
-	        	editor.putInt("input",R.id.rbIMtouch);
-	        	editor.apply();
-	        	break;
-        }
-    }    
 }

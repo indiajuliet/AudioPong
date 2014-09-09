@@ -17,41 +17,10 @@ import android.widget.*;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.hardware.*;
 
-/**
- * An example full-screen activity that shows and hides the system UI (i.e.
- * status bar and navigation/system bar) with user interaction.
- *
- * @see SystemUiHider
- */
-public class GameActivity extends Activity implements SensorEventListener{
-	
-    Thread t;
-    int sr = 44100;
-    int amplitudeAlert = 0;
-   
-    int scorePlayer=0, scoreComputer=0;
-    
-    
-    boolean isRunning = true;
-    boolean useSlider ;
-    SeekBar paddleSlider, ballSlider, opponentPaddleSlider;
 
-    
-    final double twopi = 8.*Math.atan(1.);
-    
-    
-    double playerY = 0.5;
-    double ballX = 0.75;
-    double ballY = 0.5;
-    double opponentY = 0.5;
-    
-   int matchLength=6;
-    
-    
-    TextView tbScorePlayer, tbScoreComputer;
-    
-	
-    private SensorManager sensorManager;
+public class GameActivity extends Activity implements SensorEventListener{
+
+	//DESIGN
 	
     /**
      * Whether or not the system UI should be auto-hidden after
@@ -81,6 +50,118 @@ public class GameActivity extends Activity implements SensorEventListener{
      */
     private SystemUiHider mSystemUiHider;
     
+    
+    
+    
+    
+    
+	// Audio Synthesis block
+    Thread audioThread;
+    int sr = 44100;
+    int amplitudeAlert = 0;
+    final double twopi = 8.*Math.atan(1.);
+  
+    
+    // Game variables
+    double playerY = 0.5;
+    double ballX = 0.75;
+    double ballY = 0.5;
+    double opponentY = 0.5;
+    int matchLength;
+   	int scorePlayer=0, scoreComputer=0;
+    boolean useSlider ;
+    private boolean upX=false, upY;
+    private double angle = Math.random()/100;
+    double opponentSpeed;
+    
+	// Needed Objects
+    private SensorManager sensorManager;
+    SeekBar paddleSlider, ballSlider, opponentPaddleSlider;
+    TextView tbScorePlayer, tbScoreComputer;
+    
+   // Handler to send delayed messages for recursive call
+    private Handler gameHandler = new Handler();
+    private Handler alertHandler = new Handler();
+   // private Handler handlerCapture = new Handler();
+    boolean isRunning = true;  
+
+    /**
+     * Returns an triangular signal
+     */
+    public double triangle(double input) {
+    	double modInput = input % twopi;
+    	if (modInput <= Math.PI)
+    		return 2/Math.PI*modInput-1;
+    	else
+    		return -2/Math.PI*modInput+3;
+    }
+
+    /**
+     * Returns an square signal
+     */
+    public double square(double input) {
+    	double modInput = input % twopi;
+    	if (modInput <= Math.PI)
+    		return 1;
+    	else
+    		return -1;
+    }
+
+    /**
+     * Increments the score of opposing player if ball is missed or sets new angle if hit
+     */
+    public void checkPlayerHit() {
+    	double delta = playerY-ballY;
+    	if (Math.abs(delta)>.05){
+    		scoreComputer++;
+    		if (scoreComputer>=matchLength){
+    			goGameOver();
+    			finish();
+    		}
+    	}
+    	else {
+    		angle=delta/4;
+    		if (delta<0)
+    			upY=true;
+    		else
+    			upY=false;
+    	}
+    }
+    
+    /**
+     * Increments the score of opposing player if ball is missed or sets new angle if hit
+     */
+    public void checkOpponentHit() {
+    	double delta = opponentY-ballY;
+    	if (Math.abs(delta)>.05){
+    		scorePlayer++;
+			if (scorePlayer>=matchLength){
+				goGameOver();
+				finish();
+			}
+		}
+    	else {
+    		angle=delta/4;
+    		if (delta<0)
+    			upY=true;
+    		else
+    			upY=false;
+    	}
+    }
+    
+    /**
+     * Starts the GameoverActivity
+     */
+    public void goGameOver() {
+    	Intent intent = new Intent(GameActivity.this,GameoverActivity.class);
+    	intent.putExtra("scorePlayer",scorePlayer);
+    	intent.putExtra("scoreComputer", scoreComputer);
+    	startActivity(intent);
+    }
+    
+    /**
+     * Sets useSlider to the opposite 
+     */
     public void switchInput (View view) {
     	useSlider=!useSlider;
     }
@@ -89,14 +170,7 @@ public class GameActivity extends Activity implements SensorEventListener{
     	finish();
     }
     
-    
-    private Handler gameHandler = new Handler();
-    private Handler alertHandler = new Handler();
-    private Handler handlerCapture = new Handler();
-    
-    private boolean upX=false, upY;
-    private double angle = Math.random()/100;
-    
+    // the game itself
     private Runnable gameRunnable = new Runnable() {
     	   @Override
     	   public void run() {
@@ -130,9 +204,9 @@ public class GameActivity extends Activity implements SensorEventListener{
     		
     	   //  opponent paddle movement towards ball
     		   if (opponentY<ballY)
-    			   opponentY+=0.0051;
+    			   opponentY+=opponentSpeed;
     		   else
-    			   opponentY-=0.0051;
+    			   opponentY-=opponentSpeed;
     	   
     	   // rerun every 1/10 s  
     		   if (isRunning)
@@ -146,7 +220,7 @@ public class GameActivity extends Activity implements SensorEventListener{
     	   }
     	};
     	
-    	
+    	// Alternates the amplitude of the alert signal when ball comes near player 
     	private Runnable alertRunnable = new Runnable() {
     		public void run() {
     			if (amplitudeAlert==0 && ballX>.7 && upX)
@@ -158,14 +232,18 @@ public class GameActivity extends Activity implements SensorEventListener{
     		}
     	};
 
-    	private Runnable runnableCapture = new Runnable() {
-    		public void run () {
-    			Log.i("paddle_y=",String.valueOf(playerY));
-    			Log.i("ball_x=",String.valueOf(ballX));
-    			Log.i("ball_y=",String.valueOf(ballY));
-    			//handlerCapture.postDelayed(this, 1000);
-    		}
-    	};
+    	
+    	
+//    	private Runnable runnableCapture = new Runnable() {
+//    		public void run () {
+//    			Log.i("paddle_y=",String.valueOf(playerY));
+//    			Log.i("ball_x=",String.valueOf(ballX));
+//    			Log.i("ball_y=",String.valueOf(ballY));
+//    			handlerCapture.postDelayed(this, 1000);
+//    		}
+//    	};
+    	
+    	
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -238,32 +316,48 @@ public class GameActivity extends Activity implements SensorEventListener{
         
         
         
-        
-        
-        
-        
-
+        // find the layout components from their ID
         tbScorePlayer = (TextView) findViewById(R.id.scorePlayer);
         tbScoreComputer = (TextView) findViewById(R.id.scoreComputer);
         paddleSlider = (SeekBar) findViewById(R.id.paddleSlider);
         opponentPaddleSlider = (SeekBar) findViewById(R.id.opponentPaddleSlider);
+        ballSlider = (SeekBar) findViewById(R.id.ballSlider);
         
         
-        SharedPreferences settings = getSharedPreferences(
-                "settings", Context.MODE_WORLD_WRITEABLE);
-        int inputMode = settings.getInt("input", R.id.rbIMmove);
-        switch (inputMode){
+        
+        //Read settings and set variables to make them active
+        SharedPreferences settings = getSharedPreferences("settings", Context.MODE_WORLD_WRITEABLE);
+        int inputModeID = settings.getInt("input", R.id.rbIMmove);
+        switch (inputModeID){
         	case R.id.rbIMmove 	: 	useSlider=false;
         							break;
         	case R.id.rbIMtouch	:	useSlider=true;
         							break;
         }
-        
+        int matchLengthID = settings.getInt("length", R.id.rbML6);
+        switch (matchLengthID){
+    	case R.id.rbML3 		: 	matchLength=3;
+									break;
+    	case R.id.rbML6 		: 	matchLength=6;
+									break;		
+    	case R.id.rbML10 		: 	matchLength=10;
+									break;
+    	case R.id.rbMLtrainer 	: 	matchLength=10000;
+									break;
+        }
+        int computerSpeedID = settings.getInt("speed", R.id.rbCSmiddle);
+        switch (computerSpeedID){
+    	case R.id.rbCSslow 		: 	opponentSpeed=0.0041;
+									break;
+    	case R.id.rbCSmiddle	: 	opponentSpeed=0.0051;
+									break;		
+    	case R.id.rbCSfast 		: 	opponentSpeed=0.008;
+									break;
+        }
 
 
-
-        // create a listener for the slider bar;
-          OnSeekBarChangeListener listener = new OnSeekBarChangeListener() {
+        // create a listener for the players paddle slider bar
+          OnSeekBarChangeListener playerPaddleListener = new OnSeekBarChangeListener() {
           public void onStopTrackingTouch(SeekBar seekBar) { }
           public void onStartTrackingTouch(SeekBar seekBar) { }
           public void onProgressChanged(SeekBar seekBar, 
@@ -274,73 +368,66 @@ public class GameActivity extends Activity implements SensorEventListener{
         };
 
         // set the listener on the slider
-        paddleSlider.setOnSeekBarChangeListener(listener);
+        paddleSlider.setOnSeekBarChangeListener(playerPaddleListener);
         
-
-        // point the slider to thwe GUI widget
-        ballSlider = (SeekBar) findViewById(R.id.ballSlider);
-
         
+        // Start the game by sending a message to the Runnables for the first time
         gameHandler.postDelayed(gameRunnable, 100);
         gameHandler.postDelayed(alertRunnable, 1000);
         //gameHandler.postDelayed(runnableCapture, 1000);
         
 
-        // start a new thread to synthesise audio
-        t = new Thread() {
+        // start a new thread to synthesize audio
+        audioThread = new Thread() {
          public void run() {
          // set process priority
-         setPriority(Thread.MAX_PRIORITY);
+        	setPriority(Thread.MAX_PRIORITY);
          // set the buffer size
-        int buffsize = AudioTrack.getMinBufferSize(sr,
-                AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
-        Log.i("buffsize=",String.valueOf(buffsize));
-        
-        // create an audiotrack object
-        AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC,
-                                          sr, AudioFormat.CHANNEL_OUT_MONO,
-                                  AudioFormat.ENCODING_PCM_16BIT, buffsize,
-                                  AudioTrack.MODE_STREAM);
-
-        short samples[] = new short[buffsize];
-        int amplitudePaddle = 10000;
-        int amplitudeBall = 0;
-       
-        double frequencyPaddle = 440.f;
-        double frequencyBall = 440.f;
-        double frequencyAlert = 220.f;
-        double phasePaddle = 0.0;
-        double phaseBall = 0.0;
-        double phaseAlert = 0.0;
-        
-
-        // start audio
-       audioTrack.play();
-
-       // synthesis loop
-       while(isRunning){
-        frequencyPaddle =  440 + 440*playerY;
-        frequencyBall =  440 + 440*ballY;
-        amplitudeBall=(int)(ballX*10000);
-        for(int i=0; i < buffsize; i++){
-        	samples[i] = (short) (amplitudePaddle*Math.sin(phasePaddle)+(amplitudeBall*triangle(phaseBall))+(amplitudeAlert/2*square(phaseAlert))+(amplitudeAlert*Math.random()));
-			phasePaddle += twopi*frequencyPaddle/sr;
-			phaseBall += twopi*frequencyBall/sr;
-			phaseAlert += twopi*frequencyAlert/sr;
-        }
-       audioTrack.write(samples, 0, buffsize);;
-      }
-      audioTrack.stop();
-      audioTrack.release();
-    }
-   };
-
-   
-   t.start(); 
-   
-   sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-     
-        
+	        int buffsize = AudioTrack.getMinBufferSize(sr,
+	                AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
+	        Log.i("buffsize=",String.valueOf(buffsize));
+	        
+	        // create an audiotrack object
+	        AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC,
+	                                          sr, AudioFormat.CHANNEL_OUT_MONO,
+	                                  AudioFormat.ENCODING_PCM_16BIT, buffsize,
+	                                  AudioTrack.MODE_STREAM);
+	
+	        short samples[] = new short[buffsize];
+	        int amplitudePaddle = 10000;
+	        int amplitudeBall = 0;
+	       
+	        double frequencyPaddle = 440.f;
+	        double frequencyBall = 440.f;
+	        double frequencyAlert = 220.f;
+	        double phasePaddle = 0.0;
+	        double phaseBall = 0.0;
+	        double phaseAlert = 0.0;
+	        
+	
+	        // start audio
+	        audioTrack.play();
+	
+	       // synthesis loop
+	        while(isRunning){
+		        frequencyPaddle =  440 + 440*playerY;
+		        frequencyBall =  440 + 440*ballY;
+		        amplitudeBall=(int)(ballX*10000);
+		        for(int i=0; i < buffsize; i++){
+		        	samples[i] = (short) (amplitudePaddle*Math.sin(phasePaddle)+(amplitudeBall*triangle(phaseBall))+(amplitudeAlert/2*square(phaseAlert))+(amplitudeAlert*Math.random()));
+					phasePaddle += twopi*frequencyPaddle/sr;
+					phaseBall += twopi*frequencyBall/sr;
+					phaseAlert += twopi*frequencyAlert/sr;
+	        }
+		    audioTrack.write(samples, 0, buffsize);;
+	     }
+	     audioTrack.stop();
+	     audioTrack.release();
+	    }
+	   };
+	  
+	   audioThread.start(); 
+	   sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
     }
 
     
@@ -353,26 +440,21 @@ public class GameActivity extends Activity implements SensorEventListener{
 
     }
 
+    // only run when useSlider is false
     private void getAccelerometer(SensorEvent event) {
       float[] values = event.values;
       // Movement
-      float x = values[0];
+      // float x = values[0];
       float y = (values[1]/SensorManager.GRAVITY_EARTH+1)/2;
-      float z = values[2];
-       paddleSlider.setProgress((int)(y*100));
-       playerY=y;
-
-    //  fSlider2.setProgress((int)((z+SensorManager.GRAVITY_EARTH)*5));
-     // sliderval2=(z+SensorManager.GRAVITY_EARTH)/20;
-      
+      // float z = values[2];
+      paddleSlider.setProgress((int)(y*100));
+      playerY=y;      
     }
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
 
     }
-    
-    
     
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
@@ -381,7 +463,7 @@ public class GameActivity extends Activity implements SensorEventListener{
         // Trigger the initial hide() shortly after the activity has been
         // created, to briefly hint to the user that UI controls
         // are available.
-        delayedHide(100);
+        delayedHide(100000);
     }
 
 
@@ -421,14 +503,13 @@ public class GameActivity extends Activity implements SensorEventListener{
         super.onDestroy();
         isRunning = false;
         try {
-          t.join();
+          audioThread.join();
          } catch (InterruptedException e) {
            e.printStackTrace();
          }
-         t = null;
-       //  gameHandler.removeCallbacks(gameRunnable);
-       //  alertHandler..removeCallbacks(alertRunnable);
+         audioThread = null;
    }
+    
     @Override
     protected void onResume() {
       super.onResume();
@@ -445,83 +526,4 @@ public class GameActivity extends Activity implements SensorEventListener{
       super.onPause();
       sensorManager.unregisterListener(this);
     }
-    
-    public double triangle(double input) {
-    	double modInput = input % twopi;
-    	if (modInput <= Math.PI)
-    		return 2/Math.PI*modInput-1;
-    	else
-    		return -2/Math.PI*modInput+3;
-    		
-    }
-    
-    public double square(double input) {
-    	double modInput = input % twopi;
-    	if (modInput <= Math.PI)
-    		return 1;
-    	else
-    		return -1;
-    		
-    }
-    
-    public void checkPlayerHit() {
-    	double delta = playerY-ballY;
-    	if (Math.abs(delta)>.05){
-    		scoreComputer++;
-    		if (scoreComputer>=matchLength){
-    			goGameOver();
-    			finish();
-    		}
-    	}
-    	else {
-    		angle=delta/4;
-    		if (delta<0)
-    			upY=true;
-    		else
-    			upY=false;
-    	}
-    }
-    
-    public void checkOpponentHit() {
-    	double delta = opponentY-ballY;
-    	if (Math.abs(delta)>.05){
-    		scorePlayer++;
-			if (scorePlayer>=matchLength){
-				goGameOver();
-				finish();
-			}
-		}
-    	else {
-    		angle=delta/4;
-    		if (delta<0)
-    			upY=true;
-    		else
-    			upY=false;
-    	}
-    }
-    
-    
-    
-    public void checkHitSinglemode() {
-    	double delta = playerY-ballY;
-    	if (Math.abs(delta)>.05)
-    		scoreComputer++;
-    	else {
-    		scorePlayer++;
-    		angle=delta/4;
-    		if (delta<0)
-    			upY=true;
-    		else
-    			upY=false;
-    	}
-    }
-    
-    public void goGameOver() {
-    	Intent intent = new Intent(GameActivity.this,GameoverActivity.class);
-    	intent.putExtra("scorePlayer",scorePlayer);
-    	intent.putExtra("scoreComputer", scoreComputer);
-    	startActivity(intent);
-    }
-    
-    
 }

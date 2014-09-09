@@ -45,7 +45,8 @@
 	        <RadioGroup
 	        	android:id="@+id/rbGroupInput"
 	        	android:layout_width="wrap_content"
-	        	android:layout_height="wrap_content" >
+	        	android:layout_height="wrap_content"
+	        	android:orientation="horizontal" >
 		        <RadioButton
 		                android:id="@+id/rbIMmove"
 		                android:layout_width="wrap_content"
@@ -75,29 +76,36 @@
             android:layout_height="wrap_content"
             android:gravity="center_vertical|center" >
 
-            <RadioButton
-                android:id="@+id/rbML3"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="3" />
-
-            <RadioButton
-                android:id="@+id/rbML6"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="6" />
+	        <RadioGroup
+	        	android:id="@+id/rbGroupMatchLength"
+	        	android:layout_width="wrap_content"
+	        	android:layout_height="wrap_content"
+	        	android:orientation="horizontal" >            
             
-            <RadioButton
-                android:id="@+id/rbML10"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="10" />
-            
-            <RadioButton
-                android:id="@+id/rbMLtrainer"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="trainer" />            
+	            <RadioButton
+	                android:id="@+id/rbML3"
+	                android:layout_width="wrap_content"
+	                android:layout_height="wrap_content"
+	                android:text="3" />
+	
+	            <RadioButton
+	                android:id="@+id/rbML6"
+	                android:layout_width="wrap_content"
+	                android:layout_height="wrap_content"
+	                android:text="6" />
+	            
+	            <RadioButton
+	                android:id="@+id/rbML10"
+	                android:layout_width="wrap_content"
+	                android:layout_height="wrap_content"
+	                android:text="10" />
+	            
+	            <RadioButton
+	                android:id="@+id/rbMLtrainer"
+	                android:layout_width="wrap_content"
+	                android:layout_height="wrap_content"
+	                android:text="trainer" />    
+            </RadioGroup>
         </LinearLayout>        
         
         <TextView
@@ -113,25 +121,31 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical|center" >
+	        
+	        <RadioGroup
+	        	android:id="@+id/rbGroupComputerSpeed"
+	        	android:layout_width="wrap_content"
+	        	android:layout_height="wrap_content"
+	        	android:orientation="horizontal" >              
 
-            <RadioButton
-                android:id="@+id/rbCSslow"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="slow" />
-
-            <RadioButton
-                android:id="@+id/rbCSmiddle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="middle" />
-            
-            <RadioButton
-                android:id="@+id/rbCSfast"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="fast" />
-                     
+	            <RadioButton
+	                android:id="@+id/rbCSslow"
+	                android:layout_width="wrap_content"
+	                android:layout_height="wrap_content"
+	                android:text="slow" />
+	
+	            <RadioButton
+	                android:id="@+id/rbCSmiddle"
+	                android:layout_width="wrap_content"
+	                android:layout_height="wrap_content"
+	                android:text="middle" />
+	            
+	            <RadioButton
+	                android:id="@+id/rbCSfast"
+	                android:layout_width="wrap_content"
+	                android:layout_height="wrap_content"
+	                android:text="fast" />
+            </RadioGroup>
         </LinearLayout>  
     </LinearLayout>
 
@@ -163,9 +177,6 @@
                 android:layout_weight="1"
                 android:onClick="playGame"
                 android:text="PLAY!" />
-
         </LinearLayout>
-
     </FrameLayout>
-
 </FrameLayout>

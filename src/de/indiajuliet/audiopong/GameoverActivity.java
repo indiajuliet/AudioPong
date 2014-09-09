@@ -52,7 +52,22 @@ public class GameoverActivity extends Activity {
      */
     private SystemUiHider mSystemUiHider;
     
-
+    
+    // Button navigation - start GameActivity
+    public void playGame (View view) {
+    	Intent intent = new Intent(getApplicationContext(),GameActivity.class);
+    	startActivity(intent);
+    }
+    
+    // Button navigation - start SettingsActivity
+    public void goSettings (View view) {
+    	Intent intent = new Intent(getApplicationContext(),SettingsActivity.class);
+    	startActivity(intent);
+    }
+    
+    
+    
+    
    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -123,14 +138,19 @@ public class GameoverActivity extends Activity {
         findViewById(R.id.playGame).setOnTouchListener(mDelayHideTouchListener);
         findViewById(R.id.settings).setOnTouchListener(mDelayHideTouchListener);
 
+        
+        
+        
+        // Find TextView
         TextView tbGameOverMessage;
         tbGameOverMessage = (TextView) findViewById(R.id.fullscreen_content);
         
+        // Get score values from GameActivity
         int scorePlayer = getIntent().getIntExtra("scorePlayer", -1);
         int scoreComputer = getIntent().getIntExtra("scoreComputer", -1);
         
         
-       
+       // Display win or lose message
         if (scorePlayer>=scoreComputer)
         	tbGameOverMessage.setText("YOU WON!\n"+scorePlayer+" - "+scoreComputer);
         else
@@ -183,17 +203,4 @@ public class GameoverActivity extends Activity {
         mHideHandler.removeCallbacks(mHideRunnable);
         mHideHandler.postDelayed(mHideRunnable, delayMillis);
     }
-    
- 
-    public void playGame (View view) {
-    	Intent intent = new Intent(getApplicationContext(),GameActivity.class);
-    	startActivity(intent);
-    }
-    
-    public void goSettings (View view) {
-    	Intent intent = new Intent(getApplicationContext(),SettingsActivity.class);
-    	startActivity(intent);
-    }
-    
-    
 }
